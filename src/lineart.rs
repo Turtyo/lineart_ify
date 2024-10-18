@@ -24,11 +24,13 @@ fn calculate_global_sobel(image: PhotonImage) -> Result<PhotonImage> {
 
     let mut sob_x_values = sobel_x.get_raw_pixels();
     let mut sob_y_values = sobel_y.get_raw_pixels();
-    let total_size = (sobel_x.get_height() as u64) * (sobel_y.get_width() as u64); //product of two u32 is a u64 but need to specifically type cast
+
+    let width = sobel_x.get_width();
+    let height = sobel_x.get_height();
 
     let mut sob_xy_values = vec![];
 
-    for _ in 0..total_size {
+    for _ in 0..(sob_x_values.len()) {
         let kx = sob_x_values.pop().context(
             "No more values available in the sobel X component when there should be some left",
         )? as u32;
@@ -40,7 +42,17 @@ fn calculate_global_sobel(image: PhotonImage) -> Result<PhotonImage> {
     }
     //revert the array since we've been putting at the start values we take from the end of the coefficients list
     sob_xy_values.reverse();
-    let image_sobel = PhotonImage::new_from_byteslice(sob_xy_values);
+    let image_sobel = PhotonImage::new(sob_xy_values, width, height);
 
     Ok(image_sobel)
+}
+
+pub(crate) fn sobel_blend_dodge(image: PhotonImage) -> PhotonImage {
+    let mut sobel = calculate_global_sobel(image).unwrap();
+    desaturate(&mut sobel);
+    let mut base_layer = sobel.clone();
+    invert(&mut base_layer);
+    gaussian_blur(&mut sobel, 3);
+    blend(&mut base_layer, &sobel, "dodge");
+    base_layer
 }
