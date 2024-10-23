@@ -122,3 +122,13 @@ pub(crate) fn change_grayscale_range_midpoint(
 
     Ok(PhotonImage::new(new_pixels, width, height))
 }
+
+/// Repeteadly blend an image with itself with the a multiply blend
+/// This will darken the lines
+pub(crate) fn blend_multiply_repeat(image: &mut PhotonImage, repeat_number: u8) {
+    let original_image = image.clone();
+    // we could do it faster by using a base 2 decomposition of repeat number (a fast exponentiation but with the images)
+    for _ in 0..repeat_number {
+        blend(image, &original_image, "multiply")
+    }
+}
