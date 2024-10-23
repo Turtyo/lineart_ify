@@ -22,26 +22,25 @@ fn calculate_global_sobel(image: PhotonImage) -> Result<PhotonImage> {
     sobel_horizontal(&mut sobel_x);
     sobel_vertical(&mut sobel_y);
 
-    let mut sob_x_values = sobel_x.get_raw_pixels();
-    let mut sob_y_values = sobel_y.get_raw_pixels();
+    let sob_x_values = sobel_x.get_raw_pixels();
+    let sob_y_values = sobel_y.get_raw_pixels();
 
     let width = sobel_x.get_width();
     let height = sobel_x.get_height();
 
     let mut sob_xy_values = vec![];
 
-    for _ in 0..(sob_x_values.len()) {
-        let kx = sob_x_values.pop().context(
-            "No more values available in the sobel X component when there should be some left",
-        )? as u32;
-        let ky = sob_y_values.pop().context(
-            "No more values available in the sobel Y component when there should be some left",
-        )? as u32;
+    for i in 0..(sob_x_values.len()) {
+        let kx = *(sob_x_values.get(i).with_context(||
+            format!("No available value in the sobel X component at index {} when there should be a value at this index", i),
+        )?) as u32;
+        let ky = *(sob_y_values.get(i).with_context(||
+            format!("No available value in the sobel Y component at index {} when there should be a value at this index", i),
+        )?) as u32;
         let kxy_2 = kx * kx + ky * ky; // u8 * u8 is u16 and we sum two so we need u32
         sob_xy_values.push((kxy_2 as f64).sqrt() as u8);
     }
-    //revert the array since we've been putting at the start values we take from the end of the coefficients list
-    sob_xy_values.reverse();
+
     let image_sobel = PhotonImage::new(sob_xy_values, width, height);
 
     Ok(image_sobel)
