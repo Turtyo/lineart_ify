@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use photon_rs::{
     channels::invert,
-    conv::{gaussian_blur, sobel_horizontal, sobel_vertical},
+    conv::{gaussian_blur, noise_reduction, sobel_horizontal, sobel_vertical},
     monochrome::desaturate,
     multiple::blend,
     PhotonImage,
@@ -13,6 +13,7 @@ pub(crate) fn gaussian_blend_dodge(mut image: PhotonImage) -> PhotonImage {
     invert(&mut blend_layer);
     gaussian_blur(&mut blend_layer, 3);
     blend(&mut image, &blend_layer, "dodge");
+    noise_reduction(&mut image);
     image
 }
 
@@ -53,6 +54,7 @@ pub(crate) fn sobel_blend_dodge(image: PhotonImage) -> PhotonImage {
     invert(&mut base_layer);
     gaussian_blur(&mut sobel, 3);
     blend(&mut base_layer, &sobel, "dodge");
+    noise_reduction(&mut base_layer);
     base_layer
 }
 
