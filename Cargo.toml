@@ -5,4 +5,4 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.89"
-photon-rs = { git = "https://github.com/silvia-odwyer/photon.git" }
+photon-rs = { git = "https://github.com/silvia-odwyer/photon.git", rev = "d084f68" }

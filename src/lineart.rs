@@ -7,11 +7,17 @@ use photon_rs::{
     PhotonImage,
 };
 
-pub(crate) fn gaussian_blend_dodge(mut image: PhotonImage) -> PhotonImage {
+#[derive(Clone, Copy)]
+pub(crate) enum Method {
+    GaussianBlendDodge,
+    SobelBlendDodge,
+}
+
+pub(crate) fn gaussian_blend_dodge(mut image: PhotonImage, blur_radius: i32) -> PhotonImage {
     desaturate(&mut image);
     let mut blend_layer = image.clone();
     invert(&mut blend_layer);
-    gaussian_blur(&mut blend_layer, 3);
+    gaussian_blur(&mut blend_layer, blur_radius);
     blend(&mut image, &blend_layer, "dodge");
     noise_reduction(&mut image);
     image
@@ -47,12 +53,12 @@ fn calculate_global_sobel(image: PhotonImage) -> Result<PhotonImage> {
     Ok(image_sobel)
 }
 
-pub(crate) fn sobel_blend_dodge(image: PhotonImage) -> PhotonImage {
+pub(crate) fn sobel_blend_dodge(image: PhotonImage, blur_radius: i32) -> PhotonImage {
     let mut sobel = calculate_global_sobel(image).unwrap();
     desaturate(&mut sobel);
     let mut base_layer = sobel.clone();
     invert(&mut base_layer);
-    gaussian_blur(&mut sobel, 3);
+    gaussian_blur(&mut sobel, blur_radius);
     blend(&mut base_layer, &sobel, "dodge");
     noise_reduction(&mut base_layer);
     base_layer
