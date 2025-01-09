@@ -8,4 +8,4 @@ ab_glyph = "0.2.29"
 anyhow = "1.0.89"
 image = "0.25.5"
 imageproc = "0.25.0"
-photon-rs = { git = "https://github.com/silvia-odwyer/photon.git", rev = "d084f68" }
+photon-rs = { git = "https://github.com/silvia-odwyer/photon.git", rev = "941adf9" }
