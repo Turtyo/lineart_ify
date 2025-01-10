@@ -1,3 +1,5 @@
 /target
 *.png
 *.bak
+sample_images
+result_images
