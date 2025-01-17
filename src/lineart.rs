@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use image::{Pixel, Rgba, RgbaImage};
+use image::Rgba;
 use photon_rs::{
     channels::invert,
     conv::{gaussian_blur, noise_reduction, sobel_horizontal, sobel_vertical},
@@ -21,7 +21,7 @@ pub(crate) fn gaussian_blend_dodge(mut image: PhotonImage, blur_radius: i32) -> 
     gaussian_blur(&mut blend_layer, blur_radius);
     blend(&mut image, &blend_layer, "dodge");
     noise_reduction(&mut image);
-    image_color_to_alpha(&mut image, Rgba([255,255,255,255]), 0, 255);
+    image_color_to_alpha(&mut image, Rgba([255, 255, 255, 255]), 0, 255);
     image
 }
 
@@ -63,7 +63,7 @@ pub(crate) fn sobel_blend_dodge(image: PhotonImage, blur_radius: i32) -> PhotonI
     gaussian_blur(&mut sobel, blur_radius);
     blend(&mut base_layer, &sobel, "dodge");
     noise_reduction(&mut base_layer);
-    image_color_to_alpha(&mut base_layer, Rgba([255,255,255,255]), 0, 255);
+    image_color_to_alpha(&mut base_layer, Rgba([255, 255, 255, 255]), 0, 255);
     base_layer
 }
 
@@ -105,14 +105,25 @@ pub(crate) fn image_color_to_alpha(
     transparency_threshold: u8,
 ) {
     //make chunks here of 4 by 4
-    for pixel in image_to_change.pixels_mut() {
-        *pixel = color_to_alpha(
-            pixel.to_rgba(),
+    for pixel in image_to_change.get_raw_pixels().chunks_exact_mut(4) {
+        let alpha_pixel = color_to_alpha(
+            Rgba((*pixel)[0..4].try_into().unwrap()),
             compare_to_color,
             opacity_threshold,
             transparency_threshold,
-        );
+        )
+        .0;
+        pixel.copy_from_slice(&alpha_pixel);
     }
+    // this is only correct for a base ImageBuffer (RgbaImage)
+    // for pixel in image_to_change.pixels_mut() {
+    //     *pixel = color_to_alpha(
+    //         pixel.to_rgba(),
+    //         compare_to_color,
+    //         opacity_threshold,
+    //         transparency_threshold,
+    //     );
+    // }
 }
 
 // /// Changes the midpoint of the grayscale from 122 to the new midpooint

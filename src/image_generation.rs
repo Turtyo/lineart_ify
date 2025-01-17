@@ -10,11 +10,12 @@ use image::{ExtendedColorType, ImageBuffer, ImageFormat, Rgba};
 use imageproc::drawing::draw_text_mut;
 use photon_rs::{
     multiple::blend,
-    native::{open_image, save_image},
+    native::{open_image, save_image}, transform,
 };
 
 pub(crate) fn generate_all_images(
     base_image_path: impl AsRef<Path>,
+    target_size: (u32, u32),
     min_blur_radius: i32,
     blur_step: i32,
     blur_number: u8,
@@ -32,6 +33,26 @@ pub(crate) fn generate_all_images(
         fs::create_dir_all(&output_dir_for_images)?;
     }
     let base_image = open_image(base_image_path)?;
+    //make the image smaller if it's necessary
+    let target_area = target_size.0.saturating_mul(target_size.1);
+    let current_area = base_image.get_width().saturating_mul(base_image.get_height());
+    let base_image = if current_area > target_area {
+        // calculate the ratio needed to get to the target area
+        // the correct length ratio is the square root of the area ratio because:
+        // if we name t the target area, c the current area, 
+        // t.x and t.y the width and height of the target area, c.x and c.y the widht and height of the current area
+        // N the new area, N.x and N.y the width and height of the new area, we try to get N == t
+        // N.x = c.x * sqrt(t/c) = c.x * sqrt(t.x * t.y)/sqrt(c.x * c.y) = sqrt(c.x)/sqrt(c.y) * sqrt(t.x * t.y)
+        // N.y = c.y * sqrt(t/c) = c.y * sqrt(t.x * t.y)/sqrt(c.x * c.y) = sqrt(c.y)/sqrt(c.x) * sqrt(t.x * t.y)
+        // N = N.x * N.y = sqrt(c.x)/sqrt(c.y) * sqrt(c.y)/sqrt(c.x) * sqrt(t.x * t.y) * sqrt(t.x * t.y) = t.x * t.y = t
+        let ratio = (target_area as f64).sqrt()/(current_area as f64).sqrt();
+        let new_width = base_image.get_width() as f64 * ratio;
+        let new_height = base_image.get_height() as f64 * ratio;
+        transform::resize(&base_image, new_width as u32, new_height as u32, transform::SamplingFilter::Lanczos3)
+    } else {
+        //not very good, we are re-assigning an existing image
+        base_image
+    };
     for blur_index in 0..blur_number {
         let blur_radius = min_blur_radius + (blur_index as i32 * blur_step);
         let original_image = match method {
@@ -214,6 +235,7 @@ pub(crate) fn generate_image_grid(
 
 pub fn generate_images_and_grid(
     base_image_path: impl AsRef<Path>,
+    target_size: (u32, u32),
     min_blur_radius: i32,
     blur_step: i32,
     blur_number: u8,
@@ -225,6 +247,7 @@ pub fn generate_images_and_grid(
 ) -> Result<()> {
     let output_dir_for_images = generate_all_images(
         base_image_path,
+        target_size,
         min_blur_radius,
         blur_step,
         blur_number,

@@ -4,6 +4,7 @@ mod lineart;
 use lineart::Method;
 
 fn main() {
+    let target_size = (500, 600);
     let min_blur_radius = 3;
     let blur_step = 1;
     let blur_number = 5;
@@ -13,6 +14,7 @@ fn main() {
 
     image_generation::generate_images_and_grid(
         "sample_images/pj_images/Annabelle Zebuth - Bobo Elite4.jpg",
+        target_size,
         min_blur_radius,
         blur_step,
         blur_number,
