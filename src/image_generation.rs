@@ -1,4 +1,7 @@
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use crate::lineart::{self, Method};
 use ab_glyph::FontRef;
@@ -20,15 +23,8 @@ pub(crate) fn generate_all_images(
     darken_number: u8,
     method: Method,
     output_dir: impl AsRef<Path>,
-) -> Result<()> {
-    let mut output_dir_for_images = output_dir.as_ref().to_owned();
-    let filename = base_image_path.as_ref().file_stem().with_context(|| {
-        format!(
-            "No filename found in file path: {:?}",
-            base_image_path.as_ref()
-        )
-    })?;
-    output_dir_for_images.push(filename); // add filename without extension, get it from filepath
+) -> Result<PathBuf> {
+    let output_dir_for_images = build_image_directory_path(&base_image_path, output_dir)?;
 
     // create directory if it doesn't exist
     let directory_exists = output_dir_for_images.try_exists()?;
@@ -50,7 +46,7 @@ pub(crate) fn generate_all_images(
             blend(&mut image, &original_image, "multiply")
         }
         for darken_index in 0..(darken_number - 1) {
-            let save_path = build_image_path(
+            let save_path = build_image_output_path(
                 &output_dir_for_images,
                 blur_radius,
                 min_darken_number + darken_index * darken_step,
@@ -61,7 +57,7 @@ pub(crate) fn generate_all_images(
                 blend(&mut image, &original_image, "multiply")
             }
         }
-        let save_path = build_image_path(
+        let save_path = build_image_output_path(
             &output_dir_for_images,
             blur_radius,
             min_darken_number + (darken_number - 1) * darken_step,
@@ -69,10 +65,10 @@ pub(crate) fn generate_all_images(
 
         save_image(image, save_path.as_str())?; // save image for last iteration
     }
-    Ok(())
+    Ok(output_dir_for_images)
 }
 
-fn build_image_path(image_dir: impl AsRef<Path>, blur: i32, darken: u8) -> Result<String> {
+fn build_image_output_path(image_dir: impl AsRef<Path>, blur: i32, darken: u8) -> Result<String> {
     let mut save_path = image_dir.as_ref().to_owned();
     save_path.push(format!("blur_{}_darken_{}", blur, darken));
     save_path.set_extension("png");
@@ -83,6 +79,21 @@ fn build_image_path(image_dir: impl AsRef<Path>, blur: i32, darken: u8) -> Resul
         )
     })?;
     Ok(save_path.to_string())
+}
+
+fn build_image_directory_path(
+    base_image_path: impl AsRef<Path>,
+    output_dir: impl AsRef<Path>,
+) -> Result<PathBuf> {
+    let mut output_dir_for_images = output_dir.as_ref().to_owned();
+    let filename = base_image_path.as_ref().file_stem().with_context(|| {
+        format!(
+            "No filename found in file path: {:?}",
+            base_image_path.as_ref()
+        )
+    })?;
+    output_dir_for_images.push(filename); // add filename without extension, get it from filepath
+    Ok(output_dir_for_images)
 }
 
 pub(crate) fn generate_image_grid(
@@ -100,7 +111,8 @@ pub(crate) fn generate_image_grid(
     let left_padding_mult: f32 = 1.3;
 
     //load a first image to get the dimensions and extrapolate the size of the final image
-    let first_image_path = build_image_path(&input_dir, min_blur_radius, min_darken_number)?;
+    let first_image_path = build_image_output_path(&input_dir, min_blur_radius, min_darken_number)?;
+    println!("{}", first_image_path);
     let first_image = open_image(first_image_path.as_str())?;
     let first_width = first_image.get_width();
     let first_height = first_image.get_height();
@@ -164,7 +176,7 @@ pub(crate) fn generate_image_grid(
 
         for darken_index in 0..darken_number {
             let darken = min_darken_number + darken_index * darken_step;
-            let fetch_path = build_image_path(&input_dir, blur_radius, darken)?;
+            let fetch_path = build_image_output_path(&input_dir, blur_radius, darken)?;
             let image = image::ImageReader::open(fetch_path)?.decode()?;
             let image_x =
                 (first_width as f32 * right_padding_mult) * (darken_index as f32) + left_padding;
@@ -197,5 +209,40 @@ pub(crate) fn generate_image_grid(
         ExtendedColorType::Rgba8,
         ImageFormat::Png,
     )?;
+    Ok(())
+}
+
+pub fn generate_images_and_grid(
+    base_image_path: impl AsRef<Path>,
+    min_blur_radius: i32,
+    blur_step: i32,
+    blur_number: u8,
+    min_darken_number: u8,
+    darken_step: u8,
+    darken_number: u8,
+    method: Method,
+    output_dir: impl AsRef<Path>,
+) -> Result<()> {
+    let output_dir_for_images = generate_all_images(
+        base_image_path,
+        min_blur_radius,
+        blur_step,
+        blur_number,
+        min_darken_number,
+        darken_step,
+        darken_number,
+        method,
+        &output_dir,
+    )?;
+    generate_image_grid(
+        min_blur_radius,
+        blur_step,
+        blur_number,
+        min_darken_number,
+        darken_step,
+        darken_number,
+        output_dir_for_images,
+    )?;
+
     Ok(())
 }
