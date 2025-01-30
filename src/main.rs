@@ -51,7 +51,7 @@ struct Cli {
     darken_number: u8,
     /// The method to use when generating the lineart. Depending on your image, one method can work better than the other.
     #[arg(value_enum, long, short = 'm', default_value_t = Method::Gaussian)]
-    method: Method
+    method: Method,
 }
 
 fn main() {

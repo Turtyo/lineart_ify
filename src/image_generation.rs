@@ -64,9 +64,7 @@ pub(crate) fn generate_all_images(
     for blur_index in 0..blur_number {
         let blur_radius = min_blur_radius + (blur_index as i32 * blur_step);
         let original_image = match method {
-            Method::Gaussian => {
-                lineart::gaussian_blend_dodge(base_image.clone(), blur_radius)
-            }
+            Method::Gaussian => lineart::gaussian_blend_dodge(base_image.clone(), blur_radius),
             Method::Sobel => lineart::sobel_blend_dodge(base_image.clone(), blur_radius),
         };
         let mut image = original_image.clone();
