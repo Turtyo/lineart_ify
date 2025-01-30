@@ -14,10 +14,10 @@ use clap::Parser;
 #[derive(Debug, clap::Args)]
 #[group(required = true, multiple = false)]
 struct Input {
-    /// The path to the input image
+    /// The path to the input image. Mutually exclusive with `input_directory`
     #[arg(long, short = 'i')]
     input_image: Option<PathBuf>,
-    /// The path to the input directory where the images are, this does not work recursively
+    /// The path to the input directory where the images are, this does not work recursively. Mutually exclusive with `input_image`
     #[arg(long, short = 'd')]
     input_directory: Option<PathBuf>,
 }
@@ -125,12 +125,10 @@ fn check_file_type_is_image(path: &Result<DirEntry, std::io::Error>) -> bool {
     if let Ok(dir_entry) = path {
         let path = dir_entry.path();
         if path.is_file() {
-            return match path.extension().and_then(OsStr::to_str) {
-                Some("png") => true,
-                Some("jpg") => true,
-                Some("jpeg") => true,
-                _ => false,
-            };
+            return matches!(
+                path.extension().and_then(OsStr::to_str),
+                Some("png") | Some("jpg") | Some("jpeg")
+            );
         }
     }
     false
