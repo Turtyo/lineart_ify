@@ -8,10 +8,10 @@ use photon_rs::{
     PhotonImage,
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, clap::ValueEnum)]
 pub(crate) enum Method {
-    GaussianBlendDodge,
-    SobelBlendDodge,
+    Gaussian,
+    Sobel,
 }
 
 pub(crate) fn gaussian_blend_dodge(mut image: PhotonImage, blur_radius: i32) -> PhotonImage {

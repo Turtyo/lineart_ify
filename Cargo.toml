@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 ab_glyph = "0.2.29"
 anyhow = "1.0.89"
+clap = { version = "4.5.27", features = ["derive"] }
 image = "0.25.5"
 imageproc = "0.25.0"
 photon-rs = { git = "https://github.com/silvia-odwyer/photon.git", rev = "941adf9" }
