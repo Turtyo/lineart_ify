@@ -1,18 +1,32 @@
 mod image_generation;
 mod lineart;
 
-use std::path::PathBuf;
+use std::{
+    ffi::OsStr,
+    fs::{self, DirEntry},
+    path::PathBuf,
+};
 
 use lineart::Method;
 
 use clap::Parser;
 
+#[derive(Debug, clap::Args)]
+#[group(required = true, multiple = false)]
+struct Input {
+    /// The path to the input image
+    #[arg(long, short = 'i')]
+    input_image: Option<PathBuf>,
+    /// The path to the input directory where the images are, this does not work recursively
+    #[arg(long, short = 'd')]
+    input_directory: Option<PathBuf>,
+}
+
 #[derive(Parser)]
 #[command(version, about)]
 struct Cli {
-    /// The path to the input image
-    #[arg(long, short)]
-    input_image: PathBuf,
+    #[clap(flatten)]
+    input: Input,
     /// The directory to output the images (if it doesn't exist, it will be created, recursively)
     /// The actual path where the image will be is `output_dir`/image_name/
     /// With the name of the image being extracted from the `input_image` path
@@ -56,7 +70,6 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    let input_image = cli.input_image;
     let target_size = (cli.target_size_x, cli.target_size_y);
     let min_blur_radius = cli.min_blur_radius;
     let blur_step = cli.blur_step;
@@ -67,17 +80,58 @@ fn main() {
     let method = cli.method;
     let output_dir = PathBuf::from(cli.output_dir);
 
-    image_generation::generate_images_and_grid(
-        input_image,
-        target_size,
-        min_blur_radius,
-        blur_step,
-        blur_number,
-        min_darken_number,
-        darken_step,
-        darken_number,
-        method,
-        output_dir,
-    )
-    .unwrap();
+    if let Some(input_image) = cli.input.input_image {
+        image_generation::generate_images_and_grid(
+            input_image,
+            target_size,
+            min_blur_radius,
+            blur_step,
+            blur_number,
+            min_darken_number,
+            darken_step,
+            darken_number,
+            method,
+            output_dir,
+        )
+        .unwrap();
+    } else if let Some(input_directory) = cli.input.input_directory {
+        for path in fs::read_dir(input_directory).unwrap() {
+            if check_file_type_is_image(&path) {
+                // we can unwrap since check_file_type_is_image returns false when we can't unwrap
+                let input_image = path.unwrap().path();
+                match image_generation::generate_images_and_grid(
+                    input_image,
+                    target_size,
+                    min_blur_radius,
+                    blur_step,
+                    blur_number,
+                    min_darken_number,
+                    darken_step,
+                    darken_number,
+                    method,
+                    &output_dir,
+                ) {
+                    Ok(_) => continue,
+                    Err(e) => println!("{:?}", e),
+                }
+            }
+        }
+    } else {
+        println!("No input image or input directory has been supplied, please use --help to see options, exiting.")
+    }
+}
+
+fn check_file_type_is_image(path: &Result<DirEntry, std::io::Error>) -> bool {
+    if let Ok(dir_entry) = path {
+        let path = dir_entry.path();
+        if path.is_file() {
+            return match path.extension().and_then(OsStr::to_str) {
+                Some("png") => true,
+                Some("jpg") => true,
+                Some("jpeg") => true,
+                _ => false,
+            };
+        }
+    }
+    false
 }
