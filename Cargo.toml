@@ -7,6 +7,9 @@ edition = "2021"
 ab_glyph = "0.2.29"
 anyhow = "1.0.89"
 clap = { version = "4.5.27", features = ["derive"] }
+clap-verbosity-flag = "3.0.2"
+env_logger = "0.11.6"
 image = "0.25.5"
 imageproc = "0.25.0"
+log = "0.4.25"
 photon-rs = { git = "https://github.com/silvia-odwyer/photon.git", rev = "941adf9" }

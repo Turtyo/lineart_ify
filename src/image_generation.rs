@@ -8,6 +8,7 @@ use ab_glyph::FontRef;
 use anyhow::{Context, Result};
 use image::{ExtendedColorType, ImageBuffer, ImageFormat, Rgba};
 use imageproc::drawing::draw_text_mut;
+use log::{debug, info};
 use photon_rs::{
     multiple::blend,
     native::{open_image, save_image},
@@ -26,14 +27,16 @@ pub(crate) fn generate_all_images(
     method: Method,
     output_dir: impl AsRef<Path>,
 ) -> Result<PathBuf> {
-    let output_dir_for_images = build_image_directory_path(&base_image_path, output_dir)?;
+    let base_image_path_ref = base_image_path.as_ref();
+    info!("Generating all images for {:?}", base_image_path_ref);
+    let output_dir_for_images = build_image_directory_path(base_image_path_ref, output_dir)?;
 
     // create directory if it doesn't exist
     let directory_exists = output_dir_for_images.try_exists()?;
     if !directory_exists {
         fs::create_dir_all(&output_dir_for_images)?;
     }
-    let base_image = open_image(base_image_path)?;
+    let base_image = open_image(base_image_path_ref)?;
     //make the image smaller if it's necessary
     let target_area = target_size.0.saturating_mul(target_size.1);
     let current_area = base_image
@@ -74,12 +77,8 @@ pub(crate) fn generate_all_images(
         }
         for darken_index in 0..(darken_number - 1) {
             let darken = min_darken_number + darken_index * darken_step;
-            let save_path = build_image_output_path(
-                &output_dir_for_images,
-                blur_radius,
-                darken,
-            )?;
-            println!("{}", save_path);
+            let save_path = build_image_output_path(&output_dir_for_images, blur_radius, darken)?;
+            debug!("{}", save_path);
             save_image(image.clone(), save_path.as_str())?;
             for _ in 0..darken_step {
                 blend(&mut image, &original_image, "multiply")
@@ -93,6 +92,10 @@ pub(crate) fn generate_all_images(
 
         save_image(image, save_path.as_str())?; // save image for last iteration
     }
+    info!(
+        "Finished generating all images for {:?}",
+        base_image_path_ref
+    );
     Ok(output_dir_for_images)
 }
 

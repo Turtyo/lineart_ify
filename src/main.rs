@@ -10,6 +10,8 @@ use std::{
 use lineart::Method;
 
 use clap::Parser;
+use clap_verbosity_flag::{InfoLevel, Verbosity};
+use log::{debug, error};
 
 #[derive(Debug, clap::Args)]
 #[group(required = true, multiple = false)]
@@ -66,6 +68,8 @@ struct Cli {
     /// The method to use when generating the lineart. Depending on your image, one method can work better than the other.
     #[arg(value_enum, long, short = 'm', default_value_t = Method::Gaussian)]
     method: Method,
+    #[command(flatten)]
+    verbose: Verbosity<InfoLevel>,
 }
 
 fn main() {
@@ -79,6 +83,20 @@ fn main() {
     let darken_number = cli.darken_number;
     let method = cli.method;
     let output_dir = PathBuf::from(cli.output_dir);
+
+    env_logger::Builder::new()
+        .filter_level(cli.verbose.log_level_filter())
+        .init();
+
+    debug!("target_size: {:?}", target_size);
+    debug!("min_blur_radius: {}", min_blur_radius);
+    debug!("blur_step: {}", blur_step);
+    debug!("blur_number: {}", blur_number);
+    debug!("min_darken_number: {}", min_darken_number);
+    debug!("darken_step: {}", darken_step);
+    debug!("darken_number: {}", darken_number);
+    debug!("method: {:?}", method);
+    debug!("output_dir: {:?}", output_dir);
 
     if let Some(input_image) = cli.input.input_image {
         image_generation::generate_images_and_grid(
@@ -112,12 +130,12 @@ fn main() {
                     &output_dir,
                 ) {
                     Ok(_) => continue,
-                    Err(e) => println!("{:?}", e),
+                    Err(e) => error!("{:?}", e),
                 }
             }
         }
     } else {
-        println!("No input image or input directory has been supplied, please use --help to see options, exiting.")
+        error!("No input image or input directory has been supplied, please use --help to see options, exiting.")
     }
 }
 
