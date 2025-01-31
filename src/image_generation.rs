@@ -62,6 +62,7 @@ pub(crate) fn generate_all_images(
         )
     } else {
         //not very good, we are re-assigning an existing image
+        // this is due to the fact that transform returns an image
         base_image
     };
     for blur_index in 0..blur_number {
@@ -136,6 +137,7 @@ pub(crate) fn generate_image_grid(
     darken_number: u8,
     input_dir: impl AsRef<Path>,
 ) -> Result<()> {
+    info!("Starting generation of summary image");
     let right_padding_mult: f32 = 1.2;
     let down_padding_mult: f32 = 1.1;
     let top_padding_mult: f32 = 0.6;
@@ -239,6 +241,7 @@ pub(crate) fn generate_image_grid(
         ExtendedColorType::Rgba8,
         ImageFormat::Png,
     )?;
+    info!("Finished generating summary image\n\n");
     Ok(())
 }
 
