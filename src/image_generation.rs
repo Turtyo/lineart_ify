@@ -73,10 +73,11 @@ pub(crate) fn generate_all_images(
             blend(&mut image, &original_image, "multiply")
         }
         for darken_index in 0..(darken_number - 1) {
+            let darken = min_darken_number + darken_index * darken_step;
             let save_path = build_image_output_path(
                 &output_dir_for_images,
                 blur_radius,
-                min_darken_number + darken_index * darken_step,
+                darken,
             )?;
             println!("{}", save_path);
             save_image(image.clone(), save_path.as_str())?;
@@ -139,7 +140,6 @@ pub(crate) fn generate_image_grid(
 
     //load a first image to get the dimensions and extrapolate the size of the final image
     let first_image_path = build_image_output_path(&input_dir, min_blur_radius, min_darken_number)?;
-    println!("{}", first_image_path);
     let first_image = open_image(first_image_path.as_str())?;
     let first_width = first_image.get_width();
     let first_height = first_image.get_height();

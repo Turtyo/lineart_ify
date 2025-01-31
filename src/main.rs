@@ -76,7 +76,7 @@ fn main() {
     let blur_number = cli.blur_number;
     let min_darken_number = cli.min_darken_number;
     let darken_step = cli.darken_step;
-    let darken_number = cli.darken_step;
+    let darken_number = cli.darken_number;
     let method = cli.method;
     let output_dir = PathBuf::from(cli.output_dir);
 
